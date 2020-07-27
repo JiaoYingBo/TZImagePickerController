@@ -41,6 +41,7 @@
 // 设置开关
 @property (weak, nonatomic) IBOutlet UISwitch *showTakePhotoBtnSwitch;  ///< 允许拍照
 @property (weak, nonatomic) IBOutlet UISwitch *showTakeVideoBtnSwitch;  ///< 允许拍视频
+@property (weak, nonatomic) IBOutlet UISwitch *reverseDateSwitch;
 @property (weak, nonatomic) IBOutlet UISwitch *sortAscendingSwitch;     ///< 照片排列按修改时间升序
 @property (weak, nonatomic) IBOutlet UISwitch *allowPickingVideoSwitch; ///< 允许选择视频
 @property (weak, nonatomic) IBOutlet UISwitch *allowPickingImageSwitch; ///< 允许选择图片
@@ -316,6 +317,7 @@
     
     // 4. 照片排列按修改时间升序
     imagePickerVc.sortAscendingByModificationDate = self.sortAscendingSwitch.isOn;
+    imagePickerVc.reverseDate = self.reverseDateSwitch.isOn;
     
     // imagePickerVc.minImagesCount = 3;
     // imagePickerVc.alwaysEnableDoneBtn = YES;
@@ -485,6 +487,7 @@
     
     TZImagePickerController *tzImagePickerVc = [[TZImagePickerController alloc] initWithMaxImagesCount:1 delegate:self];
     tzImagePickerVc.sortAscendingByModificationDate = self.sortAscendingSwitch.isOn;
+    tzImagePickerVc.reverseDate = self.reverseDateSwitch.isOn;
     [tzImagePickerVc showProgressHUD];
     if ([type isEqualToString:@"public.image"]) {
         UIImage *image = [info objectForKey:UIImagePickerControllerOriginalImage];

@@ -40,6 +40,8 @@
 /// 对照片排序，按修改时间升序，默认是YES。如果设置为NO,最新的照片会显示在最前面，内部的拍照按钮会排在第一个
 @property (nonatomic, assign) BOOL sortAscendingByModificationDate;
 
+@property (nonatomic, assign) BOOL reverseDate;
+
 /// Minimum selectable photo width, Default is 0
 /// 最小可选中的图片宽度，默认是0，小于这个宽度的图片不可选中
 @property (nonatomic, assign) NSInteger minPhotoWidthSelectable;

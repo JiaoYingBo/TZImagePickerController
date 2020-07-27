@@ -170,6 +170,7 @@
         self.allowTakeVideo = YES;
         self.videoMaximumDuration = 10 * 60;
         self.sortAscendingByModificationDate = YES;
+        self.reverseDate = NO;
         self.autoDismiss = YES;
         self.columnNumber = columnNumber;
         [self configDefaultSetting];
@@ -615,6 +616,11 @@
 - (void)setSortAscendingByModificationDate:(BOOL)sortAscendingByModificationDate {
     _sortAscendingByModificationDate = sortAscendingByModificationDate;
     [TZImageManager manager].sortAscendingByModificationDate = sortAscendingByModificationDate;
+}
+
+- (void)setReverseDate:(BOOL)reverseDate {
+    _reverseDate = reverseDate;
+    [TZImageManager manager].reverseDate = reverseDate;
 }
 
 - (void)settingBtnClick {

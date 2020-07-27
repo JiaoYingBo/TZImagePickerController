@@ -114,16 +114,31 @@ static CGFloat itemMargin = 5;
         if (!tzImagePickerVc.sortAscendingByModificationDate && self->_isFirstAppear && self->_model.isCameraRoll) {
             [[TZImageManager manager] getCameraRollAlbum:tzImagePickerVc.allowPickingVideo allowPickingImage:tzImagePickerVc.allowPickingImage needFetchAssets:YES completion:^(TZAlbumModel *model) {
                 self->_model = model;
-                self->_models = [NSMutableArray arrayWithArray:self->_model.models];
+                if (tzImagePickerVc.reverseDate) {
+                    NSArray *arr = [[self->_model.models reverseObjectEnumerator] allObjects];
+                    self->_models = [NSMutableArray arrayWithArray:arr];
+                } else {
+                    self->_models = [NSMutableArray arrayWithArray:self->_model.models];
+                }
                 [self initSubviews];
             }];
         } else if (self->_showTakePhotoBtn || self->_isFirstAppear || !self.model.models) {
             [[TZImageManager manager] getAssetsFromFetchResult:self->_model.result completion:^(NSArray<TZAssetModel *> *models) {
-                self->_models = [NSMutableArray arrayWithArray:models];
+                if (tzImagePickerVc.reverseDate) {
+                    NSArray *arr = [[models reverseObjectEnumerator] allObjects];
+                    self->_models = [NSMutableArray arrayWithArray:arr];
+                } else {
+                    self->_models = [NSMutableArray arrayWithArray:models];
+                }
                 [self initSubviews];
             }];
         } else {
-            self->_models = [NSMutableArray arrayWithArray:self->_model.models];
+            if (tzImagePickerVc.reverseDate) {
+                NSArray *arr = [[self->_model.models reverseObjectEnumerator] allObjects];
+                self->_models = [NSMutableArray arrayWithArray:arr];
+            } else {
+                self->_models = [NSMutableArray arrayWithArray:self->_model.models];
+            }
             [self initSubviews];
         }
     });
@@ -507,7 +522,19 @@ static CGFloat itemMargin = 5;
 - (UICollectionViewCell *)collectionView:(UICollectionView *)collectionView cellForItemAtIndexPath:(NSIndexPath *)indexPath {
     // the cell lead to take a picture / 去拍照的cell
     TZImagePickerController *tzImagePickerVc = (TZImagePickerController *)self.navigationController;
-    if (((tzImagePickerVc.sortAscendingByModificationDate && indexPath.item >= _models.count) || (!tzImagePickerVc.sortAscendingByModificationDate && indexPath.item == 0)) && _showTakePhotoBtn) {
+    if (((tzImagePickerVc.sortAscendingByModificationDate &&
+          indexPath.item >= _models.count &&
+          !tzImagePickerVc.reverseDate) ||
+         (tzImagePickerVc.sortAscendingByModificationDate &&
+          indexPath.item == 0 &&
+          tzImagePickerVc.reverseDate) ||
+         (!tzImagePickerVc.sortAscendingByModificationDate &&
+          indexPath.item >= _models.count &&
+          tzImagePickerVc.reverseDate) ||
+         (!tzImagePickerVc.sortAscendingByModificationDate &&
+          indexPath.item == 0 &&
+          !tzImagePickerVc.reverseDate)) &&
+        _showTakePhotoBtn) {
         TZAssetCameraCell *cell = [collectionView dequeueReusableCellWithReuseIdentifier:@"TZAssetCameraCell" forIndexPath:indexPath];
         cell.imageView.image = tzImagePickerVc.takePictureImage;
         if ([tzImagePickerVc.takePictureImageName isEqualToString:@"takePicture80"]) {
@@ -527,10 +554,20 @@ static CGFloat itemMargin = 5;
     cell.assetCellDidSetModelBlock = tzImagePickerVc.assetCellDidSetModelBlock;
     cell.assetCellDidLayoutSubviewsBlock = tzImagePickerVc.assetCellDidLayoutSubviewsBlock;
     TZAssetModel *model;
-    if (tzImagePickerVc.sortAscendingByModificationDate || !_showTakePhotoBtn) {
+    if (!_showTakePhotoBtn) {
         model = _models[indexPath.item];
+    } else if (tzImagePickerVc.sortAscendingByModificationDate) {
+        if (tzImagePickerVc.reverseDate) {
+            model = _models[indexPath.item - 1];
+        } else {
+            model = _models[indexPath.item];
+        }
     } else {
-        model = _models[indexPath.item - 1];
+        if (tzImagePickerVc.reverseDate) {
+            model = _models[indexPath.item];
+        } else {
+            model = _models[indexPath.item - 1];
+        }
     }
     cell.allowPickingGif = tzImagePickerVc.allowPickingGif;
     cell.model = model;
@@ -611,13 +648,31 @@ static CGFloat itemMargin = 5;
 - (void)collectionView:(UICollectionView *)collectionView didSelectItemAtIndexPath:(NSIndexPath *)indexPath {
     // take a photo / 去拍照
     TZImagePickerController *tzImagePickerVc = (TZImagePickerController *)self.navigationController;
-    if (((tzImagePickerVc.sortAscendingByModificationDate && indexPath.item >= _models.count) || (!tzImagePickerVc.sortAscendingByModificationDate && indexPath.item == 0)) && _showTakePhotoBtn)  {
+    if (((tzImagePickerVc.sortAscendingByModificationDate &&
+        indexPath.item >= _models.count &&
+        !tzImagePickerVc.reverseDate) ||
+       (tzImagePickerVc.sortAscendingByModificationDate &&
+        indexPath.item == 0 &&
+        tzImagePickerVc.reverseDate) ||
+       (!tzImagePickerVc.sortAscendingByModificationDate &&
+        indexPath.item >= _models.count &&
+        tzImagePickerVc.reverseDate) ||
+       (!tzImagePickerVc.sortAscendingByModificationDate &&
+        indexPath.item == 0 &&
+        !tzImagePickerVc.reverseDate)) &&
+        _showTakePhotoBtn)  {
         [self takePhoto]; return;
     }
     // preview phote or video / 预览照片或视频
     NSInteger index = indexPath.item;
-    if (!tzImagePickerVc.sortAscendingByModificationDate && _showTakePhotoBtn) {
-        index = indexPath.item - 1;
+    if (!tzImagePickerVc.reverseDate) {
+        if (!tzImagePickerVc.sortAscendingByModificationDate && _showTakePhotoBtn) {
+            index = indexPath.item - 1;
+        }
+    } else {
+        if (tzImagePickerVc.sortAscendingByModificationDate && _showTakePhotoBtn) {
+            index = indexPath.item - 1;
+        }
     }
     TZAssetModel *model = _models[index];
     if (model.type == TZAssetModelMediaTypeVideo && !tzImagePickerVc.allowPickingMultipleVideo) {
@@ -793,6 +848,16 @@ static CGFloat itemMargin = 5;
             if (_showTakePhotoBtn) {
                 item += 1;
             }
+            if (tzImagePickerVc.reverseDate) {
+                item = 0;
+            }
+        } else {
+            if (tzImagePickerVc.reverseDate) {
+                item = _models.count - 1;
+            }
+            if (_showTakePhotoBtn) {
+                item += 1;
+            }
         }
         dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.01 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
             [self->_collectionView scrollToItemAtIndexPath:[NSIndexPath indexPathForItem:item inSection:0] atScrollPosition:UICollectionViewScrollPositionBottom animated:NO];
@@ -860,18 +925,35 @@ static CGFloat itemMargin = 5;
     TZImagePickerController *tzImagePickerVc = (TZImagePickerController *)self.navigationController;
     [tzImagePickerVc hideProgressHUD];
     if (tzImagePickerVc.sortAscendingByModificationDate) {
-        [_models addObject:assetModel];
+        if (tzImagePickerVc.reverseDate) {
+            [_models addObject:assetModel];
+        } else {
+            [_models insertObject:assetModel atIndex:0];
+        }
     } else {
-        [_models insertObject:assetModel atIndex:0];
+        if (tzImagePickerVc.reverseDate) {
+            [_models insertObject:assetModel atIndex:0];
+        } else {
+            [_models addObject:assetModel];
+        }
     }
     
     if (tzImagePickerVc.maxImagesCount <= 1) {
         if (tzImagePickerVc.allowCrop && asset.mediaType == PHAssetMediaTypeImage) {
             TZPhotoPreviewController *photoPreviewVc = [[TZPhotoPreviewController alloc] init];
             if (tzImagePickerVc.sortAscendingByModificationDate) {
-                photoPreviewVc.currentIndex = _models.count - 1;
+                if (!tzImagePickerVc.reverseDate) {
+                    photoPreviewVc.currentIndex = _models.count - 1;
+                } else {
+                    photoPreviewVc.currentIndex = 0;
+                }
             } else {
-                photoPreviewVc.currentIndex = 0;
+                if (!tzImagePickerVc.reverseDate) {
+                    photoPreviewVc.currentIndex = 0;
+                } else {
+                    photoPreviewVc.currentIndex = _models.count - 1;
+                }
+                
             }
             photoPreviewVc.models = _models;
             [self pushPhotoPrevireViewController:photoPreviewVc];
